@@ -1,0 +1,221 @@
+﻿@inject IJSRuntime JSRuntime
+@inject MarkdownService MarkdownService
+@inject ModalService _modal
+@using OpenAI
+@using OpenAI.Chat
+@using System.ClientModel
+@using System.Text
+
+<div style="display: flex; flex-direction: column; height: 100%;padding:10px;">
+    <!-- AntList 占满剩余高度 -->
+    <AntList Bordered DataSource="@comments" TItem="commentItem" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; overflow-y: auto;transition: height 0.2s ease;">
+        <ListItem>
+            <Comment Avatar="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png"
+            Author="@context.name"
+            Datetime='@context.time.ToString("yyyy-MM-dd HH:mm:ss")'
+            Actions="@(context.role is Role.user? new[]{RemoveAction(context),EditAction(context)}:new[]{EditAction(context),RedoAction(context)})"
+            Placement="context.role is Role.ai ? CommentPlacement.Left : CommentPlacement.Right"
+            Style="width:100%;color:aliceblue"
+            >
+                <ContentTemplate >
+                    @if (context.ischeck)
+                    {
+                        <TextArea @bind-Value=context.strPool></TextArea>
+                    }
+                    else
+                    {
+                        <div style=" padding: 8px;">
+                            @context.markupStr
+                        </div>
+                    }
+                </ContentTemplate>
+                <AuthorTemplate>
+                    <span style="color:aliceblue">@context.name</span>
+                </AuthorTemplate>
+
+            </Comment>
+        </ListItem>
+    </AntList>
+    <div style="width:100%;display:flex; align-items:center; gap:10px;flex-shrink: 0;border:inset;padding:2px;">
+        <TextArea AutoSize="@true" Rows="1" style="width: calc(100% - 50px);resize: vertical;transition: height 0.2s ease;" @bind-Value=renderedHtml></TextArea>
+        @if (chating)
+        {
+            @* <Spin Size="SpinSize.Large" /> *@
+            <Icon Width="20" Height="20" Type="@IconType.Outline.PauseCircle" Style="color:aliceblue;" OnClick="@(async()=>{chating=false;})" />
+        }
+        else
+        {
+            <Button style="vertical-align:middle" Size="ButtonSize.Large"  OnClick="RenderHtml" Shape="ButtonShape.Circle" Icon="send" disabled="@chating"></Button>
+        }
+    </div>
+
+</div>
+@code {
+    // 可编辑的输入框
+    private string renderedHtml = "";   // 渲染的 HTML 内容
+
+    bool chating = false;
+
+    class commentItem
+    {
+        public string name { get; set; }//名字
+        public DateTime time { get; set; }//时间
+        public string strPool { get; set; }//原始字符串(编辑框里是它)
+        public MarkupString? markupStr { get; set; }//转义后markup(显示的是它)
+        public bool ischeck { get; set; }
+        public Role role { get; set; }
+        public int index { get; set; } = 1;
+    }
+
+    List<commentItem> comments = new List<commentItem>();
+    List<ChatMessage> messages = new List<ChatMessage>();
+
+    RenderFragment EditAction(commentItem comment)//编辑按钮
+    {
+        return
+@<Tooltip Title="编辑" Placement="Placement.Bottom">
+            <Icon Width="20" Height="20" Type="@IconType.Outline.Edit" Style="color:aliceblue;" OnClick="@(async()=>{await EditComment(comment);})" />
+        </Tooltip>
+    ;
+    }
+    RenderFragment RemoveAction(commentItem comment)//删除按钮
+    {
+        return
+       @<Tooltip Title="删除" Placement="Placement.Bottom">
+        <Icon Width="20" Height="20" Type="@IconType.Outline.Delete" Style="color:aliceblue" OnClick="@(async()=>{
+           await  RomveComment(comment);
+            })" />
+        </Tooltip>
+    ;
+    }
+    RenderFragment RedoAction(commentItem comment)//重新生成按钮
+    {
+        if (comment.index == comments.Count)
+        {
+            return
+@<Tooltip Title="重新生成" Placement="Placement.Bottom">
+        <Icon Width="20" Height="20" Type="@IconType.Outline.Redo" Style="color:aliceblue" OnClick="@(async()=>{
+             RomveComment(comment);
+await SendChat();
+            })" />
+    </Tooltip>
+    ;
+        }
+        else return RemoveAction(comment);
+    }
+
+    async Task RenderHtml()
+    {
+        if (chating) return;
+        chating = true;
+        try
+        {
+
+            MarkupString markup = new MarkupString(renderedHtml);
+
+            commentItem Useritem = new() { name = "User", time = DateTime.Now, strPool = renderedHtml, markupStr = markup, ischeck = false, role = Role.user };
+            renderedHtml = string.Empty;
+
+            comments.Add(Useritem);
+            Useritem.index = comments.Count;
+            messages.Add(new UserChatMessage(Useritem.strPool));
+            StateHasChanged();
+            await SendChat(true);
+        }
+        catch (Exception)
+        {
+
+
+        }finally{
+            chating = false;
+        }
+    }
+
+    async Task SendChat(bool fromInput=false){
+        if (!fromInput)
+        {
+            if (chating) return;
+            chating = true;
+        }
+        try
+        {
+
+            OpenAIClient client = new OpenAIClient(new System.ClientModel.ApiKeyCredential("sk-ydkolvutwmfgxzpzuzkcrupjeibbiqjmjhatmcepnrskgxtj"), new OpenAIClientOptions() { Endpoint = new Uri("https://api.siliconflow.cn/v1") });
+
+            ChatClient chat = client.GetChatClient("Pro/deepseek-ai/DeepSeek-V3");
+
+            CancellationTokenSource souce = new CancellationTokenSource();
+            CancellationToken token = souce.Token;
+            AsyncCollectionResult<StreamingChatCompletionUpdate> completionUpdates = chat.CompleteChatStreamingAsync(messages,null, token);
+
+            commentItem AIitem = new() { name = "AI", time = DateTime.Now, strPool = string.Empty, ischeck = false, role = Role.ai };
+            comments.Add(AIitem);
+            AIitem.index = comments.Count;
+            Console.WriteLine("streaming..");
+            await foreach (var item in completionUpdates)
+            {
+                if(!chating){
+                    souce.Cancel();
+                    break;
+                }
+                if (item.ContentUpdate.Count > 0)
+                {
+                    AIitem.strPool += item.ContentUpdate[0].Text;
+                    AIitem.markupStr = (MarkupString)MarkdownService.ConvertToHtml(AIitem.strPool);
+
+                    StateHasChanged();
+                }
+            }
+            await HighLight();
+            Console.WriteLine("streaming done");
+            messages.Add(new AssistantChatMessage(AIitem.strPool));
+        }
+        catch (Exception)
+        {
+
+
+        }
+        finally
+        {
+            chating = false;
+        }
+    }
+
+    async Task HighLight()
+    {
+        await JSRuntime.InvokeVoidAsync("hljs.highlightAll");
+    }
+
+    async Task EditComment(commentItem comment){
+        comment.ischeck = !comment.ischeck;
+        if (!comment.ischeck)
+        {
+            comment.markupStr = (MarkupString)MarkdownService.ConvertToHtml(comment.strPool);
+            messages[comment.index - 1] = comment.role is Role.user ? new UserChatMessage(comment.strPool) : new AssistantChatMessage(comment.strPool);
+            await HighLight();
+        }
+    }
+
+    async Task RomveComment(commentItem comment){
+        comments.RemoveAt(comment.index-1);
+        messages.RemoveAt(comment.index - 1);
+        ReIndexComments();
+    }
+
+    void ReIndexComments(){
+        int i = 1;
+        foreach (var item in comments)
+        {
+            item.index = i;
+            i++;
+        }
+    }
+
+    enum Role
+    {
+        user,
+        ai,
+        system
+    }
+
+}
