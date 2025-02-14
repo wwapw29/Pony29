@@ -1,0 +1,190 @@
+﻿@using AntDesign
+
+<Drawer @ref=@MainD Style="position:absolute;background-color:black;padding:5px" Height="100vh" @bind-Visible=show Placement="DrawerPlacement.Top">
+    <Row Gutter="16">
+        <Col Span="24">
+
+            <Row Gutter="8">
+                <Col Span="18">
+                    <Slider @bind-Value="@Temperature" Min="0" Max="2" Step="0.01" />
+                </Col>
+                <Col Span="6">
+                    <AntDesign.InputNumber Style="max-width:60px" @bind-Value="@Temperature" DefaultValue="0.01" Step="0.1" />
+                </Col>
+            </Row>
+
+            <Row Gutter="8">
+                <Col Span="18">
+                    <Slider @bind-Value="@FrequencyPenalty" Min="-2" Max="2" Step="0.01" />
+                </Col>
+                <Col Span="6">
+                    <AntDesign.InputNumber Style="max-width:60px"  @bind-Value="@FrequencyPenalty" DefaultValue="0.01" Step="0.01" />
+                </Col>
+            </Row>
+
+            <Row Gutter="8">
+                <Col Span="18">
+                    <Slider @bind-Value="@PresencePenalty" Min="-2" Max="2" Step="0.01" />
+                </Col>
+                <Col Span="6">
+                    <AntDesign.InputNumber Style="max-width:60px" @bind-Value="@PresencePenalty" DefaultValue="0.01" Step="0.01" />
+                </Col>
+            </Row>
+
+            <Row Gutter="8">
+                <Col Span="18">
+                    <Slider @bind-Value="@TopP" Min="0" Max="1" Step="0.01" />
+                </Col>
+                <Col Span="6">
+                    <AntDesign.InputNumber Style="max-width:70px" @bind-Value="@TopP" DefaultValue="0.01" Step="0.01" />
+                </Col>
+            </Row>
+        </Col>
+    </Row>
+
+    <Divider></Divider>
+
+    <Space Direction="SpaceDirection.Vertical" Style="width: 100%">
+        <Button Type="ButtonType.Primary" OnClick="AddPrompt">添加Prompt</Button>
+
+        <AntList Bordered DataSource="@PromptsList">
+            <Header>Prompt列表（拖拽排序）</Header>
+            <ChildContent Context="item">
+                <ListItem>
+                    <div draggable="true"
+                    @ondragstart="e => OnDragStart(e, item)"
+                    @ondrop="e => OnDrop(e, item)"
+                    style="cursor: move; width: 100%">
+
+                        <Row Align="RowAlign.Middle" Justify="RowJustify.SpaceBetween">
+                            <Col Span="20">
+                                <Space>
+                                    <Avatar Icon="@(item.role == Role.system ? "setting" : "user")" />
+                                    <Title Level="5" Style="margin: 0">
+                                        @item.Title
+                                    </Title>
+                                </Space>
+                            </Col>
+
+                            <Col Span="4">
+                                <Space>
+                                    <Icon Type="edit"
+                                    Theme="IconThemeType.Outline"
+                                    OnClick="@(() => ShowEditModal(item))"
+                                    Style="cursor: pointer" />
+                                    <Icon Type="menu" Style="fontSize: 16px" />
+                                </Space>
+                            </Col>
+                        </Row>
+                    </div>
+                </ListItem>
+            </ChildContent>
+            <Footer>共 @PromptsList.Count 个Prompt</Footer>
+        </AntList>
+    </Space>
+
+
+</Drawer>
+
+
+@code {
+    [Parameter]
+    public Home _home { get; set; }
+
+    bool show { get; set; }
+
+    // 模型参数d
+    double Temperature = 0.7f;
+    double FrequencyPenalty = 0f;
+    double PresencePenalty = 0f;
+    double TopP = 1f;
+
+    Drawer MainD{ get; set; }
+
+    // Prompt列表
+    List<PromptItem> PromptsList = new();
+
+    // Prompt列表相关
+    PromptItem _draggingItem;
+
+    class PromptItem
+    {
+
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Title { get; set; }
+        public Role role { get; set; } = Role.user;
+        public string Content { get; set; }
+    }
+
+    void AddPrompt()
+    {
+        PromptsList.Add(new PromptItem
+            {
+                Title = $"新Prompt {PromptsList.Count + 1}",
+                Content = ""
+            });
+    }
+
+    void HandleSortUpdate(int oldIndex, int newIndex)
+    {
+        var item = PromptsList[oldIndex];
+        PromptsList.RemoveAt(oldIndex);
+        PromptsList.Insert(newIndex, item);
+    }
+
+    void ShowEditModal(PromptItem prompt)
+    {
+        // 这里后续实现编辑模态框
+        Console.WriteLine($"Editing: {prompt.Title}");
+    }
+
+    public void ShowPrompts()
+    {
+        Console.WriteLine("====");
+        show = !show;
+        StateHasChanged();
+    }
+
+    void OnDragStart(DragEventArgs e, PromptItem item)
+    {
+        e.DataTransfer.DropEffect = "move";
+        e.DataTransfer.EffectAllowed = "move";
+        _draggingItem = item;
+    }
+
+    void OnDrop(DragEventArgs e, PromptItem targetItem)
+    {
+        if (_draggingItem == null || targetItem == null) return;
+
+        var oldIndex = PromptsList.IndexOf(_draggingItem);
+        var newIndex = PromptsList.IndexOf(targetItem);
+
+        if (oldIndex != -1 && newIndex != -1)
+        {
+            PromptsList.RemoveAt(oldIndex);
+            PromptsList.Insert(newIndex, _draggingItem);
+            _draggingItem = null;
+            StateHasChanged();
+        }
+    }
+
+    public void FullScreenModel(bool fullScreen)
+    {
+        if (fullScreen)
+        {
+            MainD.OffsetY = 0;
+        }
+        else
+        {
+            MainD.OffsetY = 0;
+        }
+        StateHasChanged();
+    }
+
+}
+
+
+<style>
+
+</style>
+

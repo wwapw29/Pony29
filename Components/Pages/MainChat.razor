@@ -6,51 +6,65 @@
 @using System.ClientModel
 @using System.Text
 
-<div style="display: flex; flex-direction: column; height: 100%;padding:10px;">
+
     <!-- AntList 占满剩余高度 -->
-    <AntList Bordered DataSource="@comments" TItem="commentItem" style="flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; overflow-y: auto;transition: height 0.2s ease;">
-        <ListItem>
-            <Comment Avatar="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png"
-            Author="@context.name"
-            Datetime='@context.time.ToString("yyyy-MM-dd HH:mm:ss")'
-            Actions="@(context.role is Role.user? new[]{RemoveAction(context),EditAction(context)}:new[]{EditAction(context),RedoAction(context)})"
-            Placement="context.role is Role.ai ? CommentPlacement.Left : CommentPlacement.Right"
-            Style="width:100%;color:aliceblue"
-            >
-                <ContentTemplate >
-                    @if (context.ischeck)
-                    {
-                        <TextArea @bind-Value=context.strPool></TextArea>
-                    }
-                    else
-                    {
-                        <div style=" padding: 8px;">
-                            @context.markupStr
-                        </div>
-                    }
-                </ContentTemplate>
-                <AuthorTemplate>
-                    <span style="color:aliceblue">@context.name</span>
-                </AuthorTemplate>
+<Layout style="display: flex; flex-direction: column; height: 100%;padding-bottom:10px;background-color:black">
+    <Header Style="width:100%;height:5vh;padding:0px;">
+        <GridRow Justify="RowJustify.Start" Style="height:100%;padding:0px 10px" >
+            <GridCol Span="2" Style="height:100%">
+                <Button Style="vertical-align:super" Icon="sliders" Size="ButtonSize.Default" Shape="ButtonShape.Circle" OnClick="e=>_home.prompts.ShowPrompts()"></Button>
+            </GridCol>
+        </GridRow>
+        </Header>
+        <Content Style="height:100%">
+            <AntList Bordered DataSource="@comments" TItem="commentItem" style="height:100%;flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column-reverse; overflow-y: auto;transition: height 0.2s ease;">
+                <ListItem>
+                    <Comment Avatar="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png"
+                             Author="@context.name"
+                             Datetime='@context.time.ToString("yyyy-MM-dd HH:mm:ss")'
+                             Actions="@(context.role is Role.user? new[]{RemoveAction(context),EditAction(context)}:new[]{EditAction(context),RedoAction(context)})"
+                             Placement="context.role is Role.ai ? CommentPlacement.Left : CommentPlacement.Right"
+                             Style="width:100%;color:aliceblue">
+                        <ContentTemplate>
+                            @if (context.ischeck)
+                            {
+                                <TextArea @bind-Value=context.strPool AutoSize></TextArea>
+                            }
+                            else
+                            {
+                                <div style=" padding: 8px;">
+                                    @context.markupStr
+                                </div>
+                            }
+                        </ContentTemplate>
+                        <AuthorTemplate>
+                            <span style="color:aliceblue">@context.name</span>
+                        </AuthorTemplate>
 
-            </Comment>
-        </ListItem>
-    </AntList>
-    <div style="width:100%;display:flex; align-items:center; gap:10px;flex-shrink: 0;border:inset;padding:2px;">
-        <TextArea AutoSize="@true" Rows="1" style="width: calc(100% - 50px);resize: vertical;transition: height 0.2s ease;" @bind-Value=renderedHtml></TextArea>
-        @if (chating)
-        {
-            @* <Spin Size="SpinSize.Large" /> *@
-            <Icon Width="20" Height="20" Type="@IconType.Outline.PauseCircle" Style="color:aliceblue;" OnClick="@(async()=>{chating=false;})" />
-        }
-        else
-        {
-            <Button style="vertical-align:middle" Size="ButtonSize.Large"  OnClick="RenderHtml" Shape="ButtonShape.Circle" Icon="send" disabled="@chating"></Button>
-        }
-    </div>
+                    </Comment>
+                </ListItem>
+            </AntList>
+        </Content>
+    <Footer style="padding:4px;background-color:black;height:5vh">
+        <div style="width:100%;display:flex; align-items:center; gap:10px;flex-shrink: 0;">
+            <TextArea AutoSize="@true" Rows="1" style="width: calc(100% - 50px);resize: vertical;transition: height 0.2s ease;" @bind-Value=renderedHtml></TextArea>
+            @if (chating)
+            {
+                @* <Spin Size="SpinSize.Large" /> *@
+                <Icon Width="20" Height="20" Type="@IconType.Outline.PauseCircle" Style="color:aliceblue;" OnClick="@(async()=>{chating=false;})" />
+            }
+            else
+            {
+                <Button style="vertical-align:middle" Size="ButtonSize.Large" OnClick="RenderHtml" Shape="ButtonShape.Circle" Icon="send" disabled="@chating"></Button>
+            }
+        </div>
+        </Footer>
+    </Layout>
 
-</div>
 @code {
+    [Parameter]
+    public Home _home { get; set; }
+
     // 可编辑的输入框
     private string renderedHtml = "";   // 渲染的 HTML 内容
 
@@ -211,11 +225,5 @@ await SendChat();
         }
     }
 
-    enum Role
-    {
-        user,
-        ai,
-        system
-    }
-
+   
 }

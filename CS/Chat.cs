@@ -7,10 +7,16 @@
 
 
     }
+    enum Role
+    {
+        user,
+        ai,
+        system
+    }
 
-    
 
-public class MarkdownService
+
+    public class MarkdownService
     {
         public string ConvertToHtml(string markdown)
         {

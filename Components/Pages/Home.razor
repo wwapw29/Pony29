@@ -1,12 +1,18 @@
 ﻿@page "/"
 @using Pony29.Components.Pages
 
-<GridRow Style="height:100%">
-	<GridCol Span="4"></GridCol>
-	<GridCol Span="16" Style="height:100%">
-		<MainChat></MainChat>
+<GridRow Gutter="8">
+	<GridCol Lg="6" Md="24" Sm="24" Xs="24">
+		<Prompts @ref="prompts" _home="this"></Prompts>
 	</GridCol>
-	<GridCol Span="4"></GridCol>
+	<GridCol Lg="14" Md="24" Sm="24" Xs="24" Flex="1">
+		<MainChat @ref="mainChat" _home="this"></MainChat>
+	</GridCol>
+	<GridCol Lg="6" Md="24" Sm="24" Xs="24"></GridCol>
 </GridRow>
 
+@code{
+public	MainChat mainChat;
+public	Prompts prompts;
 
+}
