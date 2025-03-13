@@ -1,91 +1,132 @@
 ﻿@using AntDesign
 
-<Drawer @ref=@MainD Style="position:absolute;background-color:black;padding:5px" Height="100vh" @bind-Visible=show Placement="DrawerPlacement.Top">
-    <Row Gutter="16">
-        <Col Span="24">
+<Drawer Title="@("设置和提示词")" @ref=@MainD Style="position:absolute;padding:5px" Height="100vh" @bind-Visible=show Placement="DrawerPlacement.Top">
+    <ChildContent>
+        <Row Gutter="16">
+            <Col Span="24">
+                <Row Justify="RowJustify.Center"><span>温度</span></Row>
+                <Row Gutter="8">
 
-            <Row Gutter="8">
-                <Col Span="18">
-                    <Slider @bind-Value="@Temperature" Min="0" Max="2" Step="0.01" />
-                </Col>
-                <Col Span="6">
-                    <AntDesign.InputNumber Style="max-width:60px" @bind-Value="@Temperature" DefaultValue="0.01" Step="0.1" />
-                </Col>
-            </Row>
+                    <Col Span="19">
+                        <Slider @bind-Value="@Temperature" Min="0" Max="2" Step="0.01" />
+                    </Col>
+                    <Col Span="5">
+                        <AntDesign.InputNumber Style="max-width:70px" @bind-Value="@Temperature" DefaultValue="0.01" Step="0.01" />
+                    </Col>
+                </Row>
+                <Row Justify="RowJustify.Center"><span>频率惩罚</span></Row>
+                <Row Gutter="8">
+                    <Col Span="19">
+                        <Slider @bind-Value="@FrequencyPenalty" Min="-2" Max="2" Step="0.01" />
+                    </Col>
+                    <Col Span="5">
+                        <AntDesign.InputNumber Style="max-width:70px" @bind-Value="@FrequencyPenalty" DefaultValue="0.01" Step="0.01" />
+                    </Col>
+                </Row>
+                <Row Justify="RowJustify.Center"><span>存在惩罚</span></Row>
+                <Row Gutter="8">
+                    <Col Span="19">
+                        <Slider @bind-Value="@PresencePenalty" Min="-2" Max="2" Step="0.01" />
+                    </Col>
+                    <Col Span="5">
+                        <AntDesign.InputNumber Style="max-width:70px" @bind-Value="@PresencePenalty" DefaultValue="0.01" Step="0.01" />
+                    </Col>
+                </Row>
+                <Row Justify="RowJustify.Center"><span>Top P</span></Row>
+                <Row Gutter="8">
+                    <Col Span="19">
+                        <Slider @bind-Value="@TopP" Min="0" Max="1" Step="0.01" />
+                    </Col>
+                    <Col Span="5">
+                        <AntDesign.InputNumber Style="max-width:70px" @bind-Value="@TopP" DefaultValue="0.01" Step="0.01" />
+                    </Col>
+                </Row>
+            </Col>
+        </Row>
 
-            <Row Gutter="8">
-                <Col Span="18">
-                    <Slider @bind-Value="@FrequencyPenalty" Min="-2" Max="2" Step="0.01" />
-                </Col>
-                <Col Span="6">
-                    <AntDesign.InputNumber Style="max-width:60px"  @bind-Value="@FrequencyPenalty" DefaultValue="0.01" Step="0.01" />
-                </Col>
-            </Row>
+        <Divider></Divider>
 
-            <Row Gutter="8">
-                <Col Span="18">
-                    <Slider @bind-Value="@PresencePenalty" Min="-2" Max="2" Step="0.01" />
-                </Col>
-                <Col Span="6">
-                    <AntDesign.InputNumber Style="max-width:60px" @bind-Value="@PresencePenalty" DefaultValue="0.01" Step="0.01" />
-                </Col>
-            </Row>
+        <Space Direction="SpaceDirection.Vertical" Style="width: 100%">
+            <Button Type="ButtonType.Primary" OnClick="AddPrompt">添加Prompt</Button>
 
-            <Row Gutter="8">
-                <Col Span="18">
-                    <Slider @bind-Value="@TopP" Min="0" Max="1" Step="0.01" />
-                </Col>
-                <Col Span="6">
-                    <AntDesign.InputNumber Style="max-width:70px" @bind-Value="@TopP" DefaultValue="0.01" Step="0.01" />
-                </Col>
-            </Row>
-        </Col>
-    </Row>
+            <AntList Style="width:100%;padding:10px;height:100%" Bordered DataSource="@PromptsList">
+                <Header>Prompt列表（拖拽排序）</Header>
+                <ChildContent Context="item">
+                    <ListItem Style="padding:0px">
+                        <div draggable="true"
+                        @ondragstart="e => OnDragStart(e, item)"
+                        @ondrop="e => OnDrop(e, item)"
+                        @ondragover:preventDefault
+                        @ondragover="e=>OnDragOver(e,item)"
+                        style="cursor: move; width: 100%">
+                            @if (item.Id == placeholderId && placeholderUp)
+                            {
+                                <Row>
+                                    <div @ondragover:preventDefault class="drag-placeholder"></div>
+                                </Row>
+                            }
+                            <Row Align="RowAlign.Middle" Justify="RowJustify.SpaceBetween">
 
-    <Divider></Divider>
+                                <Col Span="16">
+                                    <Space>
+                                        <Avatar Icon="@(item.role == Role.system ? "setting" : "user")" />
+                                    </Space>
+                                    <Space>
+                                        <Title Level="5" Style="margin: 0">
+                                            @item.Title
+                                        </Title>
+                                    </Space>
+                                </Col>
+                                <Col Span="4">
+                                    <Switch @bind-Value="item.Open"></Switch>
+                                </Col>
+                                <Col Span="4">
+                                    <Space>
+                                        <Icon Type="edit"
+                                        Theme="IconThemeType.Outline"
+                                        OnClick="@(() => ShowEditModal(item))"
+                                        Style="cursor: pointer" />
+                                    </Space>
+                                    <Space>
+                                        <Icon Type="@IconType.Outline.Delete"
+                                        Theme="IconThemeType.Outline"
+                                        OnClick="@(() => RemovePrompt(item))"
+                                        Style="cursor: pointer" />
+                                    </Space>
+                                </Col>
+                            </Row>
+                            @if (item.Id == placeholderId && !placeholderUp)
+                            {
+                                <Row>
+                                    <div @ondragover:preventDefault class="drag-placeholder"></div>
+                                </Row>
+                            }
+                        </div>
 
-    <Space Direction="SpaceDirection.Vertical" Style="width: 100%">
-        <Button Type="ButtonType.Primary" OnClick="AddPrompt">添加Prompt</Button>
+                    </ListItem>
+                </ChildContent>
+                <Footer>共 @PromptsList.Count 个Prompt</Footer>
+            </AntList>
+        </Space>
 
-        <AntList Bordered DataSource="@PromptsList">
-            <Header>Prompt列表（拖拽排序）</Header>
-            <ChildContent Context="item">
-                <ListItem>
-                    <div draggable="true"
-                    @ondragstart="e => OnDragStart(e, item)"
-                    @ondrop="e => OnDrop(e, item)"
-                    style="cursor: move; width: 100%">
-
-                        <Row Align="RowAlign.Middle" Justify="RowJustify.SpaceBetween">
-                            <Col Span="20">
-                                <Space>
-                                    <Avatar Icon="@(item.role == Role.system ? "setting" : "user")" />
-                                    <Title Level="5" Style="margin: 0">
-                                        @item.Title
-                                    </Title>
-                                </Space>
-                            </Col>
-
-                            <Col Span="4">
-                                <Space>
-                                    <Icon Type="edit"
-                                    Theme="IconThemeType.Outline"
-                                    OnClick="@(() => ShowEditModal(item))"
-                                    Style="cursor: pointer" />
-                                    <Icon Type="menu" Style="fontSize: 16px" />
-                                </Space>
-                            </Col>
-                        </Row>
-                    </div>
-                </ListItem>
-            </ChildContent>
-            <Footer>共 @PromptsList.Count 个Prompt</Footer>
-        </AntList>
-    </Space>
-
-
+    </ChildContent>
 </Drawer>
-
+<Modal @bind-Visible="editShow" Draggable=true Title="提示词编辑" Resizable Mask=false>
+    <Form Model="@editingItem" OnFinish="e=>{}">
+        <Row>
+            <Col>
+            <FormItem Label="名称">
+                <Input @bind-Value=context.Title></Input>
+            </FormItem>
+            </Col>
+            <Col>
+            <FormItem Label="角色">
+                <Input @bind-Value=context.role></Input>
+            </FormItem>
+            </Col>
+        </Row>
+    </Form>
+</Modal>
 
 @code {
     [Parameter]
@@ -99,13 +140,18 @@
     double PresencePenalty = 0f;
     double TopP = 1f;
 
-    Drawer MainD{ get; set; }
+    Drawer MainD { get; set; }
 
     // Prompt列表
     List<PromptItem> PromptsList = new();
 
     // Prompt列表相关
     PromptItem _draggingItem;
+    Guid? placeholderId; // 占位符的 ID
+    bool placeholderUp;
+
+    bool editShow { get; set; }
+    PromptItem? editingItem { get; set; }
 
     class PromptItem
     {
@@ -114,6 +160,7 @@
         public string Title { get; set; }
         public Role role { get; set; } = Role.user;
         public string Content { get; set; }
+        public bool Open { get; set; }
     }
 
     void AddPrompt()
@@ -125,28 +172,31 @@
             });
     }
 
-    void HandleSortUpdate(int oldIndex, int newIndex)
+    void RemovePrompt(PromptItem item)
     {
-        var item = PromptsList[oldIndex];
-        PromptsList.RemoveAt(oldIndex);
-        PromptsList.Insert(newIndex, item);
+        PromptsList.Remove(item);
+        StateHasChanged();
     }
 
     void ShowEditModal(PromptItem prompt)
     {
         // 这里后续实现编辑模态框
         Console.WriteLine($"Editing: {prompt.Title}");
+
+        editingItem = prompt;
+
+        editShow = true;
     }
 
     public void ShowPrompts()
     {
-        Console.WriteLine("====");
         show = !show;
         StateHasChanged();
     }
 
     void OnDragStart(DragEventArgs e, PromptItem item)
     {
+
         e.DataTransfer.DropEffect = "move";
         e.DataTransfer.EffectAllowed = "move";
         _draggingItem = item;
@@ -155,6 +205,9 @@
     void OnDrop(DragEventArgs e, PromptItem targetItem)
     {
         if (_draggingItem == null || targetItem == null) return;
+
+        // 移除占位符
+        placeholderId = null;
 
         var oldIndex = PromptsList.IndexOf(_draggingItem);
         var newIndex = PromptsList.IndexOf(targetItem);
@@ -168,23 +221,49 @@
         }
     }
 
-    public void FullScreenModel(bool fullScreen)
+    async void OnDragOver(DragEventArgs e, PromptItem targetItem)
     {
-        if (fullScreen)
-        {
-            MainD.OffsetY = 0;
-        }
-        else
-        {
-            MainD.OffsetY = 0;
-        }
-        StateHasChanged();
-    }
+        //e.PreventDefault();
+        if (targetItem.Id == _draggingItem.Id) return;
+        if (_draggingItem == null || targetItem == null || targetItem.Id == placeholderId) return;
+        e.DataTransfer.DropEffect = "move";
+        e.DataTransfer.EffectAllowed = "move";
 
+        //判断拖拽的物件和目标的上下位置，往下则下，往上则上
+
+        var targetIndex = PromptsList.IndexOf(targetItem);
+        var draggingIndex = PromptsList.IndexOf(_draggingItem);
+
+        if (targetIndex != draggingIndex)
+        {
+            if (targetIndex > draggingIndex)
+            {
+                // 插入向下占位符
+                placeholderId = targetItem.Id;
+                placeholderUp = false;
+                StateHasChanged();
+            }
+            else
+            {
+                // 插入向上占位符
+                placeholderId = targetItem.Id;
+                placeholderUp = true;
+                StateHasChanged();
+            }
+
+        }
+    }
 }
 
 
 <style>
-
+    /* 占位符样式 */
+    .drag-placeholder {
+        height: 25px; /* 根据你的列表项高度调整 */
+        background-color: #f0f0f0;
+        border: 2px dashed #ccc;
+        width: 100%;
+        margin: 5px 0;
+    }
 </style>
 

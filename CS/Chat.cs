@@ -7,7 +7,7 @@
 
 
     }
-    enum Role
+    public enum Role
     {
         user,
         ai,

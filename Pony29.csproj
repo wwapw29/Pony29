@@ -16,4 +16,8 @@
     <PackageReference Include="OpenAI" Version="2.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Components\Sharp\" />
+  </ItemGroup>
+
 </Project>

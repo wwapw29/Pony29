@@ -1,0 +1,8 @@
+﻿<Drawer @bind-Visible=Show Style="position:absolute;padding:5px" Height="100vh"></Drawer>
+
+@code {
+    [Parameter]
+    public Home _home { get; set; }
+
+    public bool Show { get; set; } = false;
+}

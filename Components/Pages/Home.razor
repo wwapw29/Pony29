@@ -1,18 +1,93 @@
 ﻿@page "/"
 @using Pony29.Components.Pages
 
-<GridRow Gutter="8">
-	<GridCol Lg="6" Md="24" Sm="24" Xs="24">
+@* <Row Style="height:100%" Justify="RowJustify.Center" Wrap="false" >
+	<GridCol Lg="6" Md="24" Sm="24" Xs="24" Style="z-index:1" >
 		<Prompts @ref="prompts" _home="this"></Prompts>
 	</GridCol>
-	<GridCol Lg="14" Md="24" Sm="24" Xs="24" Flex="1">
+	<GridCol Style="height:100%" Lg="14" Md="24" Sm="24" Xs="24" Flex="1">
 		<MainChat @ref="mainChat" _home="this"></MainChat>
 	</GridCol>
-	<GridCol Lg="6" Md="24" Sm="24" Xs="24"></GridCol>
-</GridRow>
+	<GridCol Lg="6" Md="24" Sm="24" Xs="24" Style="z-index:2" >
+		<Characters></Characters>
+	</GridCol>
+</Row> *@
 
-@code{
-public	MainChat mainChat;
-public	Prompts prompts;
+@* <div class="container">
+    <Prompts @ref="prompts" Style="height:100%" _home="this"></Prompts>
+    <MainChat @ref="mainChat" Style="height:100%" _home="this"></MainChat>
+    <Characters Style="height:100%"></Characters>
+</div> *@
+<div class="containerMain">
+    <div class="left" >  <Prompts @ref="prompts" _home="this"></Prompts></div>
+    <div class="middle" >   <MainChat @ref="mainChat"  _home="this"></MainChat> </div>
+    <div class="right" > <Characters @ref="characters" _home="this"></Characters> </div>
+</div>
+
+<style>
+    .containerMain {
+        display: grid;
+        grid-template-columns: repeat(9, 1fr); /* 4列栅格 */
+        gap: 0px; /* 列间距 */
+        position: relative; /* 为子元素的绝对定位提供参考 */
+        height: 100vh; /* 使用视口高度 */
+        width: 100%;
+        margin: 0px;
+        padding: 0px;
+        box-sizing: border-box; /* 防止 padding 影响宽度计算 */
+    }
+
+    .left {
+        grid-column: 1 / 3;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    .middle {
+        grid-column: 3 / 8;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        
+    }
+
+    .right {
+        grid-column: 8 / 10;
+        height: 100%;
+        overflow: hidden;
+        position: relative;
+    }
+
+    @@media (max-width: 768px) {
+        .containerMain
+
+    {
+        display: block; /* 关闭Grid布局 */
+    }
+
+    .left, .middle, .right {
+        position: absolute; /* 绝对定位，使组件叠放在一起 */
+        top: 0;
+        left: 0;
+        width: 100%; /* 占据全部宽度 */
+        height: 100%; /* 占据全部高度 */
+    }
+
+    .middle {
+        display: flex; /* 使用 flex 布局 */
+        flex-direction: column; /* 垂直排列 */
+    }
+
+    }
+
+
+</style>
+
+
+@code {
+    public MainChat mainChat;
+    public Prompts prompts;
+    public Characters characters;
 
 }
